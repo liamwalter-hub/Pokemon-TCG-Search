@@ -149,12 +149,12 @@ function renderTags() {
 async function fetchAllCards(name, apiKey) {
   let page = 1, all = [];
   while (true) {
-    const url = `https://api.pokemontcg.io/v2/cards?q=name:${name}&select=id,name,number,set&pageSize=250&page=${page}`;
+    const url = `https://api.pokemontcg.io/v2/cards?q=name:%22${encodeURIComponent(name)}%22&select=id,name,number,set&pageSize=250&page=${page}`;
     const headers = apiKey ? { 'X-Api-Key': apiKey } : {};
     const res = await fetch(url, { headers });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`API returned ${res.status}${res.status === 429 ? ' (rate limited — add an API key)' : ': ' + body.slice(0,100)}`);
+      throw new Error(`API ${res.status} for "${name}": ${body.slice(0,200)} | URL: ${url}`);
     }
     const data = await res.json();
     if (!data.data || data.data.length === 0) break;
