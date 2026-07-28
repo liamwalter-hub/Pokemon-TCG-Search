@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokémon Set Intersection Finder</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  .card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    padding: 2rem;
+    width: 100%;
+    max-width: 680px;
+  }
+  h1 { font-size: 1.4rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem; }
+  .subtitle { font-size: 0.875rem; color: #6b7280; margin-bottom: 1.25rem; }
+  label { font-size: 0.8rem; font-weight: 500; color: #374151; display: block; margin-bottom: 4px; }
+  .key-row { display: flex; gap: 8px; margin-bottom: 1.25rem; align-items: flex-end; }
+  .key-row > div { flex: 1; }
+  .key-hint { font-size: 0.75rem; color: #9ca3af; margin-top: 4px; }
+  .key-hint a { color: #6366f1; text-decoration: none; }
+  .key-hint a:hover { text-decoration: underline; }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s;
+    color: #111;
+    background: white;
+  }
+  input:focus { border-color: #6366f1; }
+  button.add-btn {
+    padding: 10px 18px;
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    height: 40px;
+  }
+  button.add-btn:hover { background: #4f46e5; }
+  .input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-end; }
+  .input-row > div { flex: 1; }
+  .tags-area { min-height: 40px; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #eef2ff; color: #4338ca;
+    border: 1px solid #c7d2fe; border-radius: 20px;
+    padding: 5px 12px 5px 14px; font-size: 0.85rem; font-weight: 500;
+  }
+  .tag button { background: none; border: none; cursor: pointer; color: #6366f1; font-size: 1rem; line-height: 1; padding: 0; opacity: 0.7; }
+  .tag button:hover { opacity: 1; }
+  button.search-btn {
+    width: 100%; padding: 12px;
+    background: #111827; color: white;
+    border: none; border-radius: 10px;
+    font-size: 0.95rem; font-weight: 500; cursor: pointer;
+  }
+  button.search-btn:hover { background: #1f2937; }
+  button.search-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+  .status { font-size: 0.85rem; color: #6b7280; margin: 12px 0; display: flex; align-items: center; gap: 8px; }
+  .spinner { width: 14px; height: 14px; border: 2px solid #e5e7eb; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { color: #dc2626; font-size: 0.85rem; margin: 12px 0; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; }
+  .results-header { font-size: 0.85rem; color: #6b7280; margin: 16px 0 10px; }
+  .set-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .set-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .set-name { font-weight: 600; font-size: 0.95rem; color: #111827; }
+  .badge { font-size: 0.75rem; padding: 2px 9px; border-radius: 20px; background: #d1fae5; color: #065f46; font-weight: 500; }
+  .set-meta { font-size: 0.78rem; color: #9ca3af; margin-bottom: 10px; }
+  .cards-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .card-pill { font-size: 0.78rem; padding: 3px 10px; border-radius: 20px; background: #f9fafb; border: 1px solid #e5e7eb; color: #4b5563; }
+  .card-pill strong { color: #111827; font-weight: 600; }
+  .empty { text-align: center; padding: 2rem; color: #9ca3af; font-size: 0.9rem; }
+  .divider { border: none; border-top: 1px solid #f3f4f6; margin: 1.25rem 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Pokémon Set Finder</h1>
+  <p class="subtitle">Find sets containing all of your chosen Pokémon</p>
+
+  <div class="key-row">
+    <div>
+      <label for="api-key">Pokémon TCG API key</label>
+      <input type="password" id="api-key" value="610fdba4-f8de-4baf-b679-477d3c737115" placeholder="API key set — or paste a different one" autocomplete="off" />
+      <p class="key-hint">Free key at <a href="https://dev.pokemontcg.io" target="_blank">dev.pokemontcg.io</a> — needed to avoid rate limits</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="input-row">
+    <div>
+      <label for="poke-input">Pokémon name</label>
+      <input type="text" id="poke-input" placeholder="e.g. Absol" autocomplete="off" />
+    </div>
+    <button class="add-btn" onclick="addPokemon()">Add</button>
+  </div>
+
+  <div class="tags-area" id="tags-area"></div>
+
+  <button class="search-btn" id="search-btn" onclick="searchSets()">Find shared sets</button>
+
+  <div id="status" class="status" style="display:none;"></div>
+  <div id="error" class="error" style="display:none;"></div>
+  <div id="results"></div>
+</div>
+
+<script>
+const pokemon = [];
+
+document.getElementById('poke-input').addEventListener('keydown', e => { if (e.key === 'Enter') addPokemon(); });
+
+function addPokemon() {
+  const input = document.getElementById('poke-input');
+  const name = input.value.trim();
+  if (!name || pokemon.map(p => p.toLowerCase()).includes(name.toLowerCase())) { input.value = ''; return; }
+  pokemon.push(name);
+  input.value = '';
+  renderTags();
+}
+
+function removePokemon(i) { pokemon.splice(i, 1); renderTags(); }
+
+function renderTags() {
+  document.getElementById('tags-area').innerHTML = pokemon.map((p, i) =>
+    `<span class="tag">${p}<button onclick="removePokemon(${i})" aria-label="Remove ${p}">×</button></span>`
+  ).join('');
+}
+
+async function fetchAllCards(name, apiKey) {
+  let page = 1, all = [];
+  while (true) {
+    const url = `https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(name)}"&select=id,name,number,set&pageSize=250&page=${page}`;
+    const headers = apiKey ? { 'X-Api-Key': apiKey } : {};
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`API returned ${res.status}${res.status === 429 ? ' (rate limited — add an API key)' : ': ' + body.slice(0,100)}`);
+    }
+    const data = await res.json();
+    if (!data.data || data.data.length === 0) break;
+    all = all.concat(data.data);
+    if (all.length >= (data.totalCount || all.length)) break;
+    page++;
+  }
+  return all;
+}
+
+async function searchSets() {
+  const statusEl = document.getElementById('status');
+  const errorEl = document.getElementById('error');
+  const resultsEl = document.getElementById('results');
+  const btn = document.getElementById('search-btn');
+  const apiKey = document.getElementById('api-key').value.trim() || '610fdba4-f8de-4baf-b679-477d3c737115';
+
+  if (pokemon.length < 2) {
+    errorEl.style.display = 'block';
+    errorEl.textContent = 'Add at least 2 Pokémon to search.';
+    return;
+  }
+
+  statusEl.style.display = 'flex';
+  errorEl.style.display = 'none';
+  resultsEl.innerHTML = '';
+  btn.disabled = true;
+
+  try {
+    const allSetMaps = [];
+
+    for (const name of pokemon) {
+      statusEl.innerHTML = `<div class="spinner"></div> Looking up <strong>${name}</strong>…`;
+      const cards = await fetchAllCards(name, apiKey);
+
+      if (cards.length === 0) {
+        statusEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.textContent = `No cards found for "${name}". Check spelling — use the full English Pokémon name.`;
+        btn.disabled = false;
+        return;
+      }
+
+      const setMap = {};
+      cards.forEach(c => {
+        const sid = c.set.id;
+        if (!setMap[sid]) setMap[sid] = { set: c.set, cards: [] };
+        setMap[sid].cards.push(c);
+      });
+      allSetMaps.push({ name, setMap });
+    }
+
+    const sharedSetIds = Object.keys(allSetMaps[0].setMap).filter(id =>
+      allSetMaps.every(({ setMap }) => setMap[id])
+    );
+
+    sharedSetIds.sort((a, b) =>
+      new Date(allSetMaps[0].setMap[b].set.releaseDate || 0) - new Date(allSetMaps[0].setMap[a].set.releaseDate || 0)
+    );
+
+    statusEl.style.display = 'none';
+    btn.disabled = false;
+
+    if (sharedSetIds.length === 0) {
+      resultsEl.innerHTML = `<div class="empty">No sets found containing all of: ${pokemon.join(', ')}.</div>`;
+      return;
+    }
+
+    resultsEl.innerHTML = `<p class="results-header">${sharedSetIds.length} set${sharedSetIds.length !== 1 ? 's' : ''} contain all ${pokemon.length} Pokémon</p>` +
+      sharedSetIds.map(id => {
+        const setInfo = allSetMaps[0].setMap[id].set;
+        const pills = allSetMaps.map(({ name, setMap }) =>
+          (setMap[id]?.cards || []).map(c =>
+            `<span class="card-pill"><strong>${name}</strong> · ${c.name} · ${c.number}</span>`
+          ).join('')
+        ).join('');
+        return `<div class="set-card">
+          <div class="set-header">
+            <span class="set-name">${setInfo.name}</span>
+            <span class="badge">${setInfo.total} cards</span>
+          </div>
+          <div class="set-meta">${setInfo.series} · Released ${setInfo.releaseDate || 'unknown'}</div>
+          <div class="cards-list">${pills}</div>
+        </div>`;
+      }).join('');
+
+  } catch (err) {
+    statusEl.style.display = 'none';
+    btn.disabled = false;
+    errorEl.style.display = 'block';
+    errorEl.textContent = err.message;
+  }
+}
+</script>
+</body>
+</html>
