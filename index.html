@@ -164,7 +164,7 @@ function logDebug(msg) {
   el.scrollTop = el.scrollHeight;
 }
 
-async function fetchWithRetry(url, headers, retries = 3, delayMs = 1000) {
+async function fetchWithRetry(url, headers, retries = 5, delayMs = 1000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     logDebug(`Fetching (attempt ${attempt}): ${url}`);
     const res = await fetch(url, { headers });
