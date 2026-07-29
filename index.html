@@ -124,6 +124,12 @@
   <div id="status" class="status" style="display:none;"></div>
   <div id="error" class="error" style="display:none;"></div>
   <div id="results"></div>
+
+  <details style="margin-top:1.5rem;">
+    <summary style="font-size:0.8rem; color:#9ca3af; cursor:pointer; user-select:none;">▶ Debug log</summary>
+    <div id="debug-log" style="margin-top:8px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:10px 12px; font-size:0.75rem; font-family:monospace; color:#374151; max-height:200px; overflow-y:auto; white-space:pre-wrap;"></div>
+    <button onclick="document.getElementById('debug-log').innerHTML=''" style="margin-top:6px; font-size:0.75rem; padding:3px 10px; border-radius:6px; border:1px solid #e5e7eb; background:white; cursor:pointer; color:#6b7280;">Clear</button>
+  </details>
 </div>
 
 <script>
@@ -148,28 +154,52 @@ function renderTags() {
   ).join('');
 }
 
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function logDebug(msg) {
+  const el = document.getElementById('debug-log');
+  const line = document.createElement('div');
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function fetchWithRetry(url, headers, retries = 3, delayMs = 1000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    logDebug(`Fetching (attempt ${attempt}): ${url}`);
+    const res = await fetch(url, { headers });
+    logDebug(`Response: HTTP ${res.status} ${res.statusText}`);
+    if (res.ok) return res;
+    const body = await res.text();
+    logDebug(`Error body: ${body.slice(0, 200)}`);
+    if (attempt < retries && res.status >= 500) {
+      logDebug(`Retrying in ${delayMs * attempt}ms...`);
+      await sleep(delayMs * attempt);
+      continue;
+    }
+    throw new Error(`HTTP ${res.status} on attempt ${attempt}/${retries} — ${body.slice(0, 150)}`);
+  }
+}
+
 async function fetchAllCards(name, apiKey) {
-  // Use pageSize=250 — most pokemon fit in one page. If totalCount says there are more, fetch additional pages.
   const headers = apiKey ? { 'X-Api-Key': apiKey } : {};
   const url = `https://api.pokemontcg.io/v2/cards?q=name:%22${encodeURIComponent(name)}%22&select=id,name,number,set&pageSize=250&page=1`;
-  const res = await fetch(url, { headers });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API ${res.status} for "${name}": ${body.slice(0,100)}`);
-  }
+  const res = await fetchWithRetry(url, headers);
   const data = await res.json();
   let all = data.data || [];
 
-  // Only fetch more pages if needed
   if (data.totalCount && all.length < data.totalCount) {
     const totalPages = Math.ceil(data.totalCount / 250);
     for (let page = 2; page <= totalPages; page++) {
       const url2 = `https://api.pokemontcg.io/v2/cards?q=name:%22${encodeURIComponent(name)}%22&select=id,name,number,set&pageSize=250&page=${page}`;
-      const res2 = await fetch(url2, { headers });
-      if (!res2.ok) break; // Stop gracefully on error — we have partial data
-      const data2 = await res2.json();
-      if (!data2.data || data2.data.length === 0) break;
-      all = all.concat(data2.data);
+      try {
+        const res2 = await fetchWithRetry(url2, headers);
+        const data2 = await res2.json();
+        if (!data2.data || data2.data.length === 0) break;
+        all = all.concat(data2.data);
+      } catch(e) {
+        break; // Use what we have
+      }
     }
   }
   return all;
@@ -198,6 +228,7 @@ async function searchSets() {
 
     for (const name of pokemon) {
       statusEl.innerHTML = `<div class="spinner"></div> Looking up <strong>${name}</strong>…`;
+      logDebug(`--- Starting lookup for: ${name} ---`);
       const cards = await fetchAllCards(name, apiKey);
 
       if (cards.length === 0) {
