@@ -3,136 +3,453 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pokémon Set Intersection Finder</title>
+<title>Pokémon Set Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  :root {
+    --navy: #1a1f3c;
+    --navy-light: #252b50;
+    --red: #e63946;
+    --red-dark: #c1121f;
+    --gold: #f4c430;
+    --white: #ffffff;
+    --offwhite: #f0f4ff;
+    --text: #1a1f3c;
+    --text-muted: #6b7280;
+    --border: #e2e8f0;
+    --success-bg: #d1fae5;
+    --success-text: #065f46;
+  }
+
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #f0f4f8;
+    font-family: 'Nunito', sans-serif;
+    background: var(--navy);
     min-height: 100vh;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 2rem 1rem;
+    color: var(--text);
   }
-  .card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-    padding: 2rem;
-    width: 100%;
+
+  /* ── Hero ── */
+  .hero {
+    background: var(--navy);
+    padding: 2rem 1.25rem 3rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Background Pokéball rings */
+  .hero::before, .hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.04);
+    pointer-events: none;
+  }
+  .hero::before { width: 500px; height: 500px; top: -200px; right: -150px; }
+  .hero::after  { width: 300px; height: 300px; bottom: -100px; left: -80px; }
+
+  .hero-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
+
+  /* Pokéball SVG decoration */
+  .pokeball-deco {
+    width: 80px; height: 80px;
+    margin: 0 auto 1.25rem;
+    position: relative;
+  }
+  .pokeball-deco svg { width: 100%; height: 100%; drop-shadow: 0 4px 20px rgba(230,57,70,0.4); }
+
+  h1 {
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    font-weight: 900;
+    color: var(--white);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 span { color: var(--gold); }
+
+  .hero-sub {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.6);
+    font-weight: 600;
+  }
+
+  /* ── Main card ── */
+  .main-card {
+    background: var(--offwhite);
+    border-radius: 24px 24px 0 0;
+    min-height: calc(100vh - 200px);
+    padding: 1.5rem 1rem 3rem;
     max-width: 680px;
+    margin: 0 auto;
+    position: relative;
   }
-  h1 { font-size: 1.4rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem; }
-  .subtitle { font-size: 0.875rem; color: #6b7280; margin-bottom: 1.25rem; }
-  label { font-size: 0.8rem; font-weight: 500; color: #374151; display: block; margin-bottom: 4px; }
-  .key-row { display: flex; gap: 8px; margin-bottom: 1.25rem; align-items: flex-end; }
-  .key-row > div { flex: 1; }
-  .key-hint { font-size: 0.75rem; color: #9ca3af; margin-top: 4px; }
-  .key-hint a { color: #6366f1; text-decoration: none; }
-  .key-hint a:hover { text-decoration: underline; }
-  input[type="text"], input[type="password"] {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1.5px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 0.9rem;
+
+  /* ── Input area ── */
+  .input-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 600;
     outline: none;
-    transition: border-color 0.15s;
-    color: #111;
     background: white;
+    color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  input:focus { border-color: #6366f1; }
-  button.add-btn {
-    padding: 10px 18px;
-    background: #6366f1;
+  input[type="text"]:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(230,57,70,0.12);
+  }
+  input[type="text"]::placeholder { color: #b0b8c8; font-weight: 600; }
+
+  .btn-add {
+    padding: 12px 20px;
+    background: var(--red);
     color: white;
     border: none;
-    border-radius: 10px;
-    font-size: 0.9rem;
-    font-weight: 500;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
     cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
     white-space: nowrap;
-    height: 40px;
   }
-  button.add-btn:hover { background: #4f46e5; }
-  .input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-end; }
-  .input-row > div { flex: 1; }
-  .tags-area { min-height: 40px; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .btn-add:hover { background: var(--red-dark); transform: translateY(-1px); }
+  .btn-add:active { transform: translateY(0); }
+
+  /* ── Tags ── */
+  .tags-area {
+    min-height: 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
   .tag {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #eef2ff; color: #4338ca;
-    border: 1px solid #c7d2fe; border-radius: 20px;
-    padding: 5px 12px 5px 14px; font-size: 0.85rem; font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--navy);
+    color: white;
+    border-radius: 20px;
+    padding: 6px 12px 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
   }
-  .tag button { background: none; border: none; cursor: pointer; color: #6366f1; font-size: 1rem; line-height: 1; padding: 0; opacity: 0.7; }
-  .tag button:hover { opacity: 1; }
-  button.search-btn {
-    width: 100%; padding: 12px;
-    background: #111827; color: white;
-    border: none; border-radius: 10px;
-    font-size: 0.95rem; font-weight: 500; cursor: pointer;
+  .tag button {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    cursor: pointer;
+    color: white;
+    font-size: 0.8rem;
+    line-height: 1;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s;
   }
-  button.search-btn:hover { background: #1f2937; }
-  button.search-btn:disabled { background: #9ca3af; cursor: not-allowed; }
-  .status { font-size: 0.85rem; color: #6b7280; margin: 12px 0; display: flex; align-items: center; gap: 8px; }
-  .spinner { width: 14px; height: 14px; border: 2px solid #e5e7eb; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  .tag button:hover { background: rgba(255,255,255,0.35); }
+
+  /* ── Search button ── */
+  .btn-search {
+    width: 100%;
+    padding: 14px;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    letter-spacing: 0.02em;
+  }
+  .btn-search:hover:not(:disabled) { background: var(--navy-light); transform: translateY(-1px); }
+  .btn-search:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
+
+  /* Spinning Pokéball loader */
+  .pokeball-spin {
+    width: 20px; height: 20px;
+    display: none;
+  }
+  .pokeball-spin.active { display: block; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .error { color: #dc2626; font-size: 0.85rem; margin: 12px 0; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; }
-  .results-header { font-size: 0.85rem; color: #6b7280; margin: 16px 0 10px; }
-  .set-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
-  .set-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
-  .set-name { font-weight: 600; font-size: 0.95rem; color: #111827; }
-  .badge { font-size: 0.75rem; padding: 2px 9px; border-radius: 20px; background: #d1fae5; color: #065f46; font-weight: 500; }
-  .set-meta { font-size: 0.78rem; color: #9ca3af; margin-bottom: 10px; }
+
+  /* ── Status ── */
+  .status-msg {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin: 12px 0;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── Error ── */
+  .error-msg {
+    display: none;
+    background: #fff0f0;
+    border: 2px solid #fca5a5;
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #b91c1c;
+    font-size: 0.875rem;
+    font-weight: 700;
+    margin: 12px 0;
+  }
+
+  /* ── Results ── */
+  .results-header {
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 20px 0 10px;
+  }
+
+  .set-card {
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .set-card:hover {
+    border-color: var(--navy);
+    box-shadow: 0 4px 16px rgba(26,31,60,0.08);
+  }
+
+  .set-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+
+  .set-name {
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--navy);
+  }
+
+  .set-badge {
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--gold);
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .set-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
   .cards-list { display: flex; flex-wrap: wrap; gap: 6px; }
-  .card-pill { font-size: 0.78rem; padding: 3px 10px; border-radius: 20px; background: #f9fafb; border: 1px solid #e5e7eb; color: #4b5563; }
-  .card-pill strong { color: #111827; font-weight: 600; }
-  .empty { text-align: center; padding: 2rem; color: #9ca3af; font-size: 0.9rem; }
-  .divider { border: none; border-top: 1px solid #f3f4f6; margin: 1.25rem 0; }
+
+  .card-pill {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--offwhite);
+    border: 1.5px solid var(--border);
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .card-pill strong { color: var(--navy); font-weight: 800; }
+
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .empty .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+
+  /* ── Debug ── */
+  details { margin-top: 2rem; }
+  details summary {
+    font-size: 0.75rem;
+    color: #b0b8c8;
+    cursor: pointer;
+    font-weight: 700;
+    user-select: none;
+    list-style: none;
+  }
+  details summary::before { content: '▶ '; }
+  details[open] summary::before { content: '▼ '; }
+  #debug-log {
+    margin-top: 8px;
+    background: var(--navy);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.72rem;
+    font-family: monospace;
+    color: #a5f3fc;
+    max-height: 200px;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+  .btn-clear {
+    margin-top: 6px;
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: white;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+  }
+
+  /* ── Mobile optimisations ── */
+  @media (max-width: 480px) {
+    .hero { padding: 1.5rem 1rem 2.5rem; }
+
+    .pokeball-deco { width: 60px; height: 60px; margin-bottom: 1rem; }
+
+    h1 { font-size: 1.6rem; }
+    .hero-sub { font-size: 0.875rem; }
+
+    .main-card { padding: 1.25rem 0.875rem 4rem; border-radius: 20px 20px 0 0; }
+
+    input[type="text"] {
+      font-size: 1rem; /* Prevents iOS zoom on focus */
+      padding: 12px 14px;
+    }
+
+    .btn-add {
+      padding: 12px 14px;
+      font-size: 0.9rem;
+    }
+
+    .btn-search {
+      padding: 16px;
+      font-size: 1rem;
+      /* Keep fixed to bottom on mobile for easy thumb access */
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      border-radius: 0;
+      z-index: 10;
+      box-shadow: 0 -4px 20px rgba(26,31,60,0.15);
+    }
+
+    /* Add padding so results aren't hidden behind fixed button */
+    #results { padding-bottom: 5rem; }
+
+    .set-card { padding: 14px 12px; }
+    .set-name { font-size: 0.9rem; }
+    .card-pill { font-size: 0.72rem; padding: 3px 8px; }
+
+    .tags-area { margin-bottom: 12px; }
+    .tag { font-size: 0.8rem; padding: 5px 10px 5px 12px; }
+  }
+
+  @media (min-width: 640px) {
+    .main-card { padding: 2rem 2rem 3rem; }
+  }
 </style>
 </head>
 <body>
-<div class="card">
-  <h1>Pokémon Set Finder</h1>
-  <p class="subtitle">Find sets containing all of your chosen Pokémon</p>
 
-  <div class="key-row">
-    <div>
-      <label for="api-key">Pokémon TCG API key</label>
-      <input type="password" id="api-key" value="610fdba4-f8de-4baf-b679-477d3c737115" placeholder="API key set — or paste a different one" autocomplete="off" />
-      <p class="key-hint">Free key at <a href="https://dev.pokemontcg.io" target="_blank">dev.pokemontcg.io</a> — needed to avoid rate limits</p>
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="pokeball-deco">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="48" fill="#e63946" stroke="#fff" stroke-width="2"/>
+        <rect x="2" y="46" width="96" height="8" fill="white"/>
+        <circle cx="50" cy="50" r="48" fill="none" stroke="white" stroke-width="2"/>
+        <circle cx="50" cy="50" r="14" fill="white" stroke="white" stroke-width="2"/>
+        <circle cx="50" cy="50" r="8" fill="#e63946" stroke="white" stroke-width="2"/>
+        <!-- bottom half -->
+        <path d="M2,50 a48,48 0 0,0 96,0" fill="#f0f4ff" stroke="white" stroke-width="2"/>
+        <circle cx="50" cy="50" r="14" fill="white" stroke="#1a1f3c" stroke-width="3"/>
+        <circle cx="50" cy="50" r="7" fill="#1a1f3c"/>
+      </svg>
     </div>
-    <button class="add-btn" onclick="testKey()" style="align-self:flex-end;">Test key</button>
+    <h1>Pokémon <span>Set</span> Finder</h1>
+    <p class="hero-sub">Discover which sets contain all your chosen Pokémon</p>
   </div>
-  <div id="key-test" style="font-size:0.8rem; margin-bottom:1rem; display:none;"></div>
+</div>
 
-  <hr class="divider">
+<!-- Main -->
+<div class="main-card">
 
+  <label class="input-label" for="poke-input">Add Pokémon</label>
   <div class="input-row">
-    <div>
-      <label for="poke-input">Pokémon name</label>
-      <input type="text" id="poke-input" placeholder="e.g. Absol" autocomplete="off" />
-    </div>
-    <button class="add-btn" onclick="addPokemon()">Add</button>
+    <input type="text" id="poke-input" placeholder="e.g. Pikachu, Absol, Vaporeon…" autocomplete="off" />
+    <button class="btn-add" onclick="addPokemon()">Add</button>
   </div>
 
   <div class="tags-area" id="tags-area"></div>
 
-  <button class="search-btn" id="search-btn" onclick="searchSets()">Find shared sets</button>
+  <button class="btn-search" id="search-btn" onclick="searchSets()">
+    <svg class="pokeball-spin" id="spin-ball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="48" fill="#e63946"/>
+      <rect x="2" y="46" width="96" height="8" fill="white"/>
+      <path d="M2,50 a48,48 0 0,0 96,0" fill="#f0f4ff"/>
+      <circle cx="50" cy="50" r="10" fill="white" stroke="#1a1f3c" stroke-width="3"/>
+      <circle cx="50" cy="50" r="5" fill="#1a1f3c"/>
+    </svg>
+    Find shared sets
+  </button>
 
-  <div id="status" class="status" style="display:none;"></div>
-  <div id="error" class="error" style="display:none;"></div>
+  <div id="status" class="status-msg"></div>
+  <div id="error" class="error-msg"></div>
   <div id="results"></div>
 
-  <details style="margin-top:1.5rem;">
-    <summary style="font-size:0.8rem; color:#9ca3af; cursor:pointer; user-select:none;">▶ Debug log</summary>
-    <div id="debug-log" style="margin-top:8px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:10px 12px; font-size:0.75rem; font-family:monospace; color:#374151; max-height:200px; overflow-y:auto; white-space:pre-wrap;"></div>
-    <button onclick="document.getElementById('debug-log').innerHTML=''" style="margin-top:6px; font-size:0.75rem; padding:3px 10px; border-radius:6px; border:1px solid #e5e7eb; background:white; cursor:pointer; color:#6b7280;">Clear</button>
+  <details>
+    <summary>Debug log</summary>
+    <div id="debug-log"></div>
+    <button class="btn-clear" onclick="document.getElementById('debug-log').innerHTML=''">Clear</button>
   </details>
 </div>
 
 <script>
+const API_KEY = '610fdba4-f8de-4baf-b679-477d3c737115';
 const pokemon = [];
 
 document.getElementById('poke-input').addEventListener('keydown', e => { if (e.key === 'Enter') addPokemon(); });
@@ -154,8 +471,6 @@ function renderTags() {
   ).join('');
 }
 
-async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
 function logDebug(msg) {
   const el = document.getElementById('debug-log');
   const line = document.createElement('div');
@@ -164,7 +479,10 @@ function logDebug(msg) {
   el.scrollTop = el.scrollHeight;
 }
 
-async function fetchWithRetry(url, headers, retries = 5, delayMs = 1000) {
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fetchWithRetry(url, retries = 5, delayMs = 1000) {
+  const headers = { 'X-Api-Key': API_KEY };
   for (let attempt = 1; attempt <= retries; attempt++) {
     logDebug(`Fetching (attempt ${attempt}): ${url}`);
     const res = await fetch(url, { headers });
@@ -177,29 +495,25 @@ async function fetchWithRetry(url, headers, retries = 5, delayMs = 1000) {
       await sleep(delayMs * attempt);
       continue;
     }
-    throw new Error(`HTTP ${res.status} on attempt ${attempt}/${retries} — ${body.slice(0, 150)}`);
+    throw new Error(`HTTP ${res.status} after ${attempt} attempt(s) — ${body.slice(0, 150)}`);
   }
 }
 
-async function fetchAllCards(name, apiKey) {
-  const headers = apiKey ? { 'X-Api-Key': apiKey } : {};
+async function fetchAllCards(name) {
   const url = `https://api.pokemontcg.io/v2/cards?q=name:%22${encodeURIComponent(name)}%22&select=id,name,number,set&pageSize=250&page=1`;
-  const res = await fetchWithRetry(url, headers);
+  const res = await fetchWithRetry(url);
   const data = await res.json();
   let all = data.data || [];
-
   if (data.totalCount && all.length < data.totalCount) {
     const totalPages = Math.ceil(data.totalCount / 250);
     for (let page = 2; page <= totalPages; page++) {
       const url2 = `https://api.pokemontcg.io/v2/cards?q=name:%22${encodeURIComponent(name)}%22&select=id,name,number,set&pageSize=250&page=${page}`;
       try {
-        const res2 = await fetchWithRetry(url2, headers);
+        const res2 = await fetchWithRetry(url2);
         const data2 = await res2.json();
         if (!data2.data || data2.data.length === 0) break;
         all = all.concat(data2.data);
-      } catch(e) {
-        break; // Use what we have
-      }
+      } catch(e) { break; }
     }
   }
   return all;
@@ -210,7 +524,7 @@ async function searchSets() {
   const errorEl = document.getElementById('error');
   const resultsEl = document.getElementById('results');
   const btn = document.getElementById('search-btn');
-  const apiKey = document.getElementById('api-key').value.trim() || '610fdba4-f8de-4baf-b679-477d3c737115';
+  const spinBall = document.getElementById('spin-ball');
 
   if (pokemon.length < 2) {
     errorEl.style.display = 'block';
@@ -222,23 +536,22 @@ async function searchSets() {
   errorEl.style.display = 'none';
   resultsEl.innerHTML = '';
   btn.disabled = true;
+  spinBall.classList.add('active');
 
   try {
     const allSetMaps = [];
-
     for (const name of pokemon) {
-      statusEl.innerHTML = `<div class="spinner"></div> Looking up <strong>${name}</strong>…`;
+      statusEl.textContent = `Looking up ${name}…`;
       logDebug(`--- Starting lookup for: ${name} ---`);
-      const cards = await fetchAllCards(name, apiKey);
-
+      const cards = await fetchAllCards(name);
       if (cards.length === 0) {
         statusEl.style.display = 'none';
         errorEl.style.display = 'block';
-        errorEl.textContent = `No cards found for "${name}". Check spelling — use the full English Pokémon name.`;
+        errorEl.textContent = `No cards found for "${name}". Check the spelling — use the full English Pokémon name.`;
         btn.disabled = false;
+        spinBall.classList.remove('active');
         return;
       }
-
       const setMap = {};
       cards.forEach(c => {
         const sid = c.set.id;
@@ -251,20 +564,20 @@ async function searchSets() {
     const sharedSetIds = Object.keys(allSetMaps[0].setMap).filter(id =>
       allSetMaps.every(({ setMap }) => setMap[id])
     );
-
     sharedSetIds.sort((a, b) =>
       new Date(allSetMaps[0].setMap[b].set.releaseDate || 0) - new Date(allSetMaps[0].setMap[a].set.releaseDate || 0)
     );
 
     statusEl.style.display = 'none';
     btn.disabled = false;
+    spinBall.classList.remove('active');
 
     if (sharedSetIds.length === 0) {
-      resultsEl.innerHTML = `<div class="empty">No sets found containing all of: ${pokemon.join(', ')}.</div>`;
+      resultsEl.innerHTML = `<div class="empty"><span class="empty-icon">😔</span>No sets found containing all of: ${pokemon.join(', ')}.</div>`;
       return;
     }
 
-    resultsEl.innerHTML = `<p class="results-header">${sharedSetIds.length} set${sharedSetIds.length !== 1 ? 's' : ''} contain all ${pokemon.length} Pokémon</p>` +
+    resultsEl.innerHTML = `<p class="results-header">${sharedSetIds.length} shared set${sharedSetIds.length !== 1 ? 's' : ''} found</p>` +
       sharedSetIds.map(id => {
         const setInfo = allSetMaps[0].setMap[id].set;
         const pills = allSetMaps.map(({ name, setMap }) =>
@@ -275,9 +588,9 @@ async function searchSets() {
         return `<div class="set-card">
           <div class="set-header">
             <span class="set-name">${setInfo.name}</span>
-            <span class="badge">${setInfo.total} cards</span>
+            <span class="set-badge">${setInfo.total} cards</span>
           </div>
-          <div class="set-meta">${setInfo.series} · Released ${setInfo.releaseDate || 'unknown'}</div>
+          <div class="set-meta">${setInfo.series} · ${setInfo.releaseDate || 'Unknown release'}</div>
           <div class="cards-list">${pills}</div>
         </div>`;
       }).join('');
@@ -285,32 +598,9 @@ async function searchSets() {
   } catch (err) {
     statusEl.style.display = 'none';
     btn.disabled = false;
+    spinBall.classList.remove('active');
     errorEl.style.display = 'block';
     errorEl.textContent = err.message;
-  }
-}
-
-async function testKey() {
-  const apiKey = document.getElementById('api-key').value.trim();
-  const el = document.getElementById('key-test');
-  el.style.display = 'block';
-  el.style.color = '#6b7280';
-  el.textContent = 'Testing...';
-  try {
-    const res = await fetch('https://api.pokemontcg.io/v2/cards?q=name:Pikachu&pageSize=1', {
-      headers: apiKey ? { 'X-Api-Key': apiKey } : {}
-    });
-    const data = await res.json();
-    if (res.ok) {
-      el.style.color = '#065f46';
-      el.textContent = `✓ Key works! API returned ${data.totalCount} Pikachu cards.`;
-    } else {
-      el.style.color = '#dc2626';
-      el.textContent = `✗ API error ${res.status}: ${JSON.stringify(data).slice(0,100)}`;
-    }
-  } catch(e) {
-    el.style.color = '#dc2626';
-    el.textContent = `✗ Request failed: ${e.message}`;
   }
 }
 </script>
