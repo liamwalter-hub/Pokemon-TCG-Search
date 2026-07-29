@@ -103,7 +103,9 @@
       <input type="password" id="api-key" value="610fdba4-f8de-4baf-b679-477d3c737115" placeholder="API key set — or paste a different one" autocomplete="off" />
       <p class="key-hint">Free key at <a href="https://dev.pokemontcg.io" target="_blank">dev.pokemontcg.io</a> — needed to avoid rate limits</p>
     </div>
+    <button class="add-btn" onclick="testKey()" style="align-self:flex-end;">Test key</button>
   </div>
+  <div id="key-test" style="font-size:0.8rem; margin-bottom:1rem; display:none;"></div>
 
   <hr class="divider">
 
@@ -147,20 +149,28 @@ function renderTags() {
 }
 
 async function fetchAllCards(name, apiKey) {
-  let page = 1, all = [];
-  while (true) {
-    const url = `https://api.pokemontcg.io/v2/cards?q=name:%22${encodeURIComponent(name)}%22&select=id,name,number,set&pageSize=250&page=${page}`;
-    const headers = apiKey ? { 'X-Api-Key': apiKey } : {};
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`API ${res.status} for "${name}": ${body.slice(0,200)} | URL: ${url}`);
+  // Use pageSize=250 — most pokemon fit in one page. If totalCount says there are more, fetch additional pages.
+  const headers = apiKey ? { 'X-Api-Key': apiKey } : {};
+  const url = `https://api.pokemontcg.io/v2/cards?q=name:%22${encodeURIComponent(name)}%22&select=id,name,number,set&pageSize=250&page=1`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`API ${res.status} for "${name}": ${body.slice(0,100)}`);
+  }
+  const data = await res.json();
+  let all = data.data || [];
+
+  // Only fetch more pages if needed
+  if (data.totalCount && all.length < data.totalCount) {
+    const totalPages = Math.ceil(data.totalCount / 250);
+    for (let page = 2; page <= totalPages; page++) {
+      const url2 = `https://api.pokemontcg.io/v2/cards?q=name:%22${encodeURIComponent(name)}%22&select=id,name,number,set&pageSize=250&page=${page}`;
+      const res2 = await fetch(url2, { headers });
+      if (!res2.ok) break; // Stop gracefully on error — we have partial data
+      const data2 = await res2.json();
+      if (!data2.data || data2.data.length === 0) break;
+      all = all.concat(data2.data);
     }
-    const data = await res.json();
-    if (!data.data || data.data.length === 0) break;
-    all = all.concat(data.data);
-    if (all.length >= (data.totalCount || all.length)) break;
-    page++;
   }
   return all;
 }
@@ -246,6 +256,30 @@ async function searchSets() {
     btn.disabled = false;
     errorEl.style.display = 'block';
     errorEl.textContent = err.message;
+  }
+}
+
+async function testKey() {
+  const apiKey = document.getElementById('api-key').value.trim();
+  const el = document.getElementById('key-test');
+  el.style.display = 'block';
+  el.style.color = '#6b7280';
+  el.textContent = 'Testing...';
+  try {
+    const res = await fetch('https://api.pokemontcg.io/v2/cards?q=name:Pikachu&pageSize=1', {
+      headers: apiKey ? { 'X-Api-Key': apiKey } : {}
+    });
+    const data = await res.json();
+    if (res.ok) {
+      el.style.color = '#065f46';
+      el.textContent = `✓ Key works! API returned ${data.totalCount} Pikachu cards.`;
+    } else {
+      el.style.color = '#dc2626';
+      el.textContent = `✗ API error ${res.status}: ${JSON.stringify(data).slice(0,100)}`;
+    }
+  } catch(e) {
+    el.style.color = '#dc2626';
+    el.textContent = `✗ Request failed: ${e.message}`;
   }
 }
 </script>
